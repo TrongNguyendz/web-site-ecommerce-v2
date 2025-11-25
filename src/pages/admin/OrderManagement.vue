@@ -22,8 +22,19 @@
 					<td class="p-3">{{ o.customer }}</td>
 					<td class="p-3">{{ o.status }}</td>
 					<td class="p-3">
-						<button class="text-emerald-600 underline" @click="update(o, 'Shipped')">Giao hàng</button>
-						<button class="ml-3 text-red-600 underline" @click="update(o, 'Cancelled')">Huỷ</button>
+						<div class="flex items-center gap-2">
+							<button @click="update(o, 'Shipped')" aria-label="Giao hàng"
+								class="flex items-center gap-2 rounded-md bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300">
+								<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h13l3 4v6a1 1 0 01-1 1h-1a2 2 0 11-4 0H9a2 2 0 11-4 0H4a1 1 0 01-1-1V7z"/></svg>
+								<span>Giao hàng</span>
+							</button>
+
+							<button @click="update(o, 'Cancelled')" aria-label="Huỷ"
+								class="flex items-center gap-2 rounded-md bg-red-50 px-3 py-1 text-sm font-medium text-red-700 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-300">
+								<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+								<span>Huỷ</span>
+							</button>
+						</div>
 					</td>
 				</tr>
 			</tbody>

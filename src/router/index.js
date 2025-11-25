@@ -21,6 +21,7 @@ const OrderDetail = () => import('../pages/OrderDetail.vue');
 const OrderTracking = () => import('../pages/OrderTracking.vue');
 
 // Admin pages
+const AdminWelcome = () => import('../pages/admin/AdminWelcome.vue');
 const AdminDashboard = () => import('../pages/admin/AdminDashboard.vue');
 const ProductManagement = () => import('../pages/admin/ProductManagement.vue');
 const OrderManagement = () => import('../pages/admin/OrderManagement.vue');
@@ -46,6 +47,7 @@ const routes = [
 	{ path: '/orders/:id', component: OrderDetail, meta: { requiresAuth: true } },
 	{ path: '/tracking/:orderId', component: OrderTracking, meta: { requiresAuth: true } },
 
+	{ path: '/admin/welcome', component: AdminWelcome, meta: { requiresAdmin: true } },
 	{ path: '/admin', component: AdminDashboard, meta: { requiresAdmin: true } },
 	{ path: '/admin/products', component: ProductManagement, meta: { requiresAdmin: true } },
 	{ path: '/admin/orders', component: OrderManagement, meta: { requiresAdmin: true } },
