@@ -1,13 +1,9 @@
 <template>
 	<section>
-		<div class="mb-6 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 p-8 text-white">
-			<h1 class="text-2xl font-bold">Khám phá ưu đãi hôm nay</h1>
-			<p class="mt-1 text-white/80">Giảm giá đến 50% cho nhiều mặt hàng</p>
-		</div>
+		<BannerCarousel :slides="bannerData" class="mb-6" />
 
 		<h2 class="mb-3 flex items-center justify-between text-lg font-semibold">
 			<span>Sản phẩm</span>
-			<div class="text-sm text-gray-500">Trang {{ page }} / {{ totalPages }}</div>
 		</h2>
 
 		<div class="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -20,41 +16,31 @@
 			/>
 		</div>
 
-		<!-- Pagination (compact center input showing current / total) -->
-		<div class="mt-6 flex items-center justify-center">
-			<div class="inline-flex items-center gap-6">
-				<button
-					@click="prevPage"
-					:disabled="page === 1"
-					class="px-5 py-3 rounded-full bg-gradient-to-b from-gray-800 to-gray-700 text-white shadow-md hover:brightness-105 disabled:opacity-50 disabled:cursor-not-allowed"
-				>
-					Trước
-				</button>
-
-				<div class="flex items-center justify-center rounded-full bg-gray-700/80 px-6 py-2 shadow-inner w-48">
-					<div class="flex items-center justify-center gap-2">
-						<input
-							v-model.number="pageInput"
-							@keydown.enter.prevent="gotoInputPage"
-							type="number"
-							min="1"
-							:max="totalPages"
-							class="w-14 bg-transparent text-center text-lg font-semibold text-white border-0 focus:outline-none focus:ring-0 appearance-textfield"
-							aria-label="Số trang"
-						/>
-						<span class="text-lg font-semibold text-gray-300">/</span>
-						<span class="text-lg font-semibold text-gray-300">{{ totalPages }}</span>
-					</div>
-				</div>
-
-				<button
-					@click="nextPage"
-					:disabled="page === totalPages"
-					class="px-5 py-3 rounded-full bg-gradient-to-b from-gray-800 to-gray-700 text-white shadow-md hover:brightness-105 disabled:opacity-50 disabled:cursor-not-allowed"
-				>
-					Kế tiếp
-				</button>
-			</div>
+		<!-- Pagination -->
+		<div class="mt-6 flex items-center justify-center space-x-3">
+			<button
+				@click="prevPage"
+				:disabled="page === 1"
+				class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-gray-700 transition-colors hover:bg-gray-300 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+			>
+				<span class="sr-only">Trang trước</span>
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+				</svg>
+			</button>
+			<span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+				Trang <span class="font-bold">{{ page }}</span> / <span class="font-bold">{{ totalPages }}</span>
+			</span>
+			<button
+				@click="nextPage"
+				:disabled="page === totalPages"
+				class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-gray-700 transition-colors hover:bg-gray-300 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+			>
+				<span class="sr-only">Trang kế tiếp</span>
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+				</svg>
+			</button>
 		</div>
 	</section>
 </template>
@@ -62,8 +48,30 @@
 <script setup>
 import { onMounted, ref, computed, watch } from 'vue';
 import ProductCard from '../components/common/ProductCard.vue';
+import BannerCarousel from '../components/common/BannerCarousel.vue';
 import { useCartStore } from '../stores/cart';
 import { useProductsStore } from '../stores/products';
+
+const bannerData = ref([
+	{
+		type: 'image',
+		src: 'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?q=80&w=2070&auto=format&fit=crop',
+		title: 'Bộ sưu tập mùa hè',
+		subtitle: 'Giảm giá đặc biệt cho tất cả các mặt hàng.'
+	},
+	{
+		type: 'video',
+		src: 'https://videos.pexels.com/video-files/854171/854171-hd_1920_1080_25fps.mp4',
+		title: 'Phong cách mới, Năng lượng mới',
+		subtitle: 'Khám phá ngay.'
+	},
+	{
+		type: 'image',
+		src: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070&auto=format&fit=crop',
+		title: 'Siêu giảm giá cuối tuần',
+		subtitle: 'Đừng bỏ lỡ các ưu đãi tuyệt vời.'
+	}
+]);
 
 const cart = useCartStore();
 const productsStore = useProductsStore();
@@ -74,18 +82,10 @@ const productsList = ref([]);
 
 const totalPages = computed(() => Math.max(1, Math.ceil((productsStore.total || 0) / pageSize)));
 
-const pages = computed(() => {
-	const p = totalPages.value;
-	const arr = [];
-	// show up to first 5 pages in buttons (we always have a direct '1' and input for others)
-	for (let i = 1; i <= Math.min(p, 5); i++) arr.push(i);
-	return arr;
-});
-
 async function loadPage() {
 	const skip = (page.value - 1) * pageSize;
 	await productsStore.fetchList({ limit: pageSize, skip });
-const items = productsStore.items ?? [];
+	const items = productsStore.items ?? [];
 	productsList.value = (items ?? []).map((p) => ({
 		id: p.id,
 		name: p.title ?? p.name,
@@ -100,15 +100,6 @@ const items = productsStore.items ?? [];
 	}
 }
 
-// page input handling
-const pageInput = ref(page.value);
-function gotoInputPage() {
-	const n = Number(pageInput.value) || 1;
-	const target = Math.min(Math.max(1, Math.floor(n)), totalPages.value || 1);
-	page.value = target;
-	pageInput.value = target;
-}
-
 function addToCart(p) {
 	cart.addItem(p, 1);
 }
@@ -116,10 +107,6 @@ function addWishlist() {
 	/* no-op demo */
 }
 
-function goToPage(p) {
-	if (p === page.value) return;
-	page.value = p;
-}
 function prevPage() {
 	if (page.value > 1) page.value -= 1;
 }
@@ -129,24 +116,9 @@ function nextPage() {
 
 watch(page, () => {
 	loadPage();
-	pageInput.value = page.value;
 });
 
 onMounted(async () => {
 	await loadPage();
 });
 </script>
-
-<style scoped>
-/* Hide number input spinners (up/down) for Chrome, Edge, Safari */
-input[type=number]::-webkit-outer-spin-button,
-input[type=number]::-webkit-inner-spin-button {
-	-webkit-appearance: none;
-	margin: 0;
-}
-/* Hide number input spinner for Firefox */
-input[type=number] {
-	appearance: textfield;
-	-moz-appearance: textfield;
-}
-</style>

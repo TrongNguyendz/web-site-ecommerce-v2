@@ -18,13 +18,38 @@
 				<div v-else class="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
 					<ProductCard v-for="p in items" :key="p.id" :product="p" @add="addToCart" />
 				</div>
+				<div class="mt-6 flex items-center justify-center space-x-3">
+					<button
+						@click="prevPage"
+						:disabled="currentPage === 1"
+						class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-gray-700 transition-colors hover:bg-gray-300 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+					>
+						<span class="sr-only">Trang trước</span>
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+						</svg>
+					</button>
+					<span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+						Trang <span class="font-bold">{{ currentPage }}</span> / <span class="font-bold">{{ totalPages }}</span>
+					</span>
+					<button
+						@click="nextPage"
+						:disabled="currentPage === totalPages"
+						class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-gray-700 transition-colors hover:bg-gray-300 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+					>
+						<span class="sr-only">Trang kế tiếp</span>
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+						</svg>
+					</button>
+				</div>
 			</div>
 		</div>
 	</section>
 </template>
 
 <script setup>
-import { onMounted, reactive, computed } from 'vue';
+import { onMounted, reactive, computed, ref, watch } from 'vue';
 import { useProductsStore } from '../stores/products';
 import { useCartStore } from '../stores/cart';
 import InputField from '../components/forms/InputField.vue';
@@ -52,15 +77,42 @@ const sortOptions = [
 	{ value: 'price_desc', label: 'Giá giảm dần' }
 ];
 
-onMounted(() => products.fetchList({ limit: 24 }));
+const currentPage = ref(1);
+const itemsPerPage = ref(24);
+const totalPages = computed(() => Math.ceil(products.total / itemsPerPage.value));
+
+async function fetchProducts() {
+	const params = {
+		limit: itemsPerPage.value,
+		skip: (currentPage.value - 1) * itemsPerPage.value
+	};
+	if (filters.q) params.q = filters.q;
+	// TODO: Add sorting params if backend supports it
+	await products.fetchList(params);
+}
+
+onMounted(fetchProducts);
+watch(currentPage, fetchProducts);
 
 function applyFilters() {
-	const params = {};
-	if (filters.q) params.q = filters.q;
-	products.fetchList(params);
+	currentPage.value = 1;
+	fetchProducts();
 }
+
 function addToCart(p) {
 	cart.addItem(p, 1);
+}
+
+function nextPage() {
+	if (currentPage.value < totalPages.value) {
+		currentPage.value++;
+	}
+}
+
+function prevPage() {
+	if (currentPage.value > 1) {
+		currentPage.value--;
+	}
 }
 </script>
 
