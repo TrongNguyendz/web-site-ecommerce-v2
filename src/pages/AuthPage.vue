@@ -119,7 +119,7 @@ const handleLogin = async () => {
                     email: result.data.user.email,
                     fullname: result.data.user.full_name,
                     phone: result.data.user.phone,
-                    avatar: result.data.user.avatar_url,
+                    avatar_url: result.data.user.avatar_url,
                     role: result.data.user.role,
                 },
                 role: result.data.user.role  // "customer" hoặc "admin"

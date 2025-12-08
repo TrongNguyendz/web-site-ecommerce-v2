@@ -66,7 +66,7 @@ import { useUserStore } from "../stores/user";
 import { useUIStore } from "../stores/ui";
 import { useRouter } from "vue-router";
 import InputField from "../components/forms/InputField.vue";
-import { UpdateProfile } from "../utils/user_service_api";
+import { UpdateProfile, UpdateUserAvatar } from "../utils/user_service_api";
 
 // Avatar mặc định (Pepe OK siêu ngầu)
 import defaultAvatar from "@/assets/default_user.jpg"; 
@@ -77,7 +77,11 @@ const router = useRouter();
 const isUpdating = ref(false);
 
 // Xem trước avatar khi chọn file
-const avatarPreview = ref(user.profile?.avatar_url || "");
+// const avatarPreview = ref(user.profile?.avatar_url || "");
+const avatarPreview = computed(() => {
+  if (!user.profile?.avatar_url) return defaultAvatar;
+  return `http://localhost:3001${user.profile.avatar_url}`;
+});
 const avatarFile = ref(null); // File để gửi lên server
 
 const form = reactive({
@@ -94,6 +98,36 @@ const onFileChange = (e) => {
     avatarFile.value = file;
     avatarPreview.value = URL.createObjectURL(file);
   }
+  uploadAvatar();
+};
+
+// Hàm upload avatar riêng biệt
+const uploadAvatar = async () => {
+  if (!avatarFile.value) return;
+
+  isUpdating.value = true;
+  try {
+    const res = await UpdateUserAvatar(user.profile.id, avatarFile.value, user.token);
+
+    if (res.data.success) {
+      // Cập nhật store → watch currentAvatarUrl sẽ tự động đổi preview
+      user.updateProfile({
+        avatar_url: res.data.data.avatar_url
+      });
+
+      ui.pushToast({ type: "success", message: "Đổi ảnh đại diện thành công!" });
+    }
+  } catch (err) {
+    ui.pushToast({
+      type: "error",
+      message: err.response?.data?.message || "Đổi ảnh thất bại"
+    });
+    // Nếu lỗi → quay lại ảnh cũ
+    avatarPreview.value = currentAvatarUrl.value;
+  } finally {
+    isUpdating.value = false;
+    avatarFile.value = null; // reset để lần sau vẫn trigger onChange
+  }
 };
 
 const handleupdate = async () => {
@@ -106,9 +140,9 @@ const handleupdate = async () => {
     formData.append("full_name", form.fullName);
     formData.append("phone", form.phone);
     
-    if (avatarFile.value) {
-      formData.append("avatar", avatarFile.value);
-    }
+    // if (avatarFile.value) {
+    //   formData.append("avatar", avatarFile.value);
+    // }
 
     const res = await UpdateProfile(user.profile.id, formData, user.token);
     const result = res.data;
@@ -120,7 +154,8 @@ const handleupdate = async () => {
         email: result.data.email,
         fullname: result.data.full_name,
         phone: result.data.phone,
-        avatar_url: result.data.avatar_url || avatarPreview.value,
+        avatar_url: result.data.avatar_url 
+        // || avatarPreview.value,
       });
 
       // Xóa file tạm nếu thành công

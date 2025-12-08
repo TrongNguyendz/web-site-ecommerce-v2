@@ -22,8 +22,7 @@
 
 			<!-- Description -->
 			<p class="text-gray-600 dark:text-gray-400 mb-12 leading-relaxed">
-				Bạn có quyền truy cập vào các công cụ quản lý toàn diện. Từ quản lý sản phẩm, đơn hàng, người dùng đến các báo cáo chi tiết. 
-				Hãy bắt đầu bằng cách nhấn nút dưới để truy cập bảng điều khiển.
+				Bạn có quyền truy cập vào các công cụ quản lý toàn diện. Từ quản lý sản phẩm, đơn hàng, người dùng đến các báo cáo chi tiết. 	
 			</p>
 
 			<!-- Features Preview -->
@@ -67,19 +66,19 @@
 				>
 					Tiếp tục đến Bảng Điều Khiển
 				</RouterLink>
-				<RouterLink 
+				<!-- <RouterLink 
 					to="/"
 					class="px-8 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold rounded-lg transition-colors"
 				>
 					Quay lại Trang chủ
-				</RouterLink>
+				</RouterLink> -->
 			</div>
 
 			<!-- Footer Note -->
 			<div class="mt-12 pt-8 border-t border-gray-300 dark:border-gray-700">
-				<p class="text-sm text-gray-600 dark:text-gray-400">
+				<!-- <p class="text-sm text-gray-600 dark:text-gray-400">
 					Bạn đã đăng nhập với quyền quản trị viên. Vui lòng sử dụng các công cụ một cách có trách nhiệm.
-				</p>
+				</p> -->
 			</div>
 		</div>
 	</section>
@@ -88,11 +87,11 @@
 <script setup>
 import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
-import { useUserStore } from '@/stores/user';
+import { useUserStore } from '../../stores/user';
 
 const user = useUserStore();
 
 const adminName = computed(() => {
-	return user.profile?.name || 'Quản trị viên';
+	return user.profile?.username || 'admin';
 });
 </script>
