@@ -12,7 +12,10 @@
 					<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
 					<span v-if="cartCount" class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs text-white">{{ cartCount }}</span>
 				</RouterLink>
-				<RouterLink v-if="!isAuth" to="/auth" class="hover:underline">Đăng nhập</RouterLink>
+				<RouterLink v-if="!isAuth" to="/auth" class="inline-flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium text-gray-800 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 transition-colors shadow-md">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 011 1v12a1 1 0 11-2 0V4a1 1 0 011-1zm7.707 3.293a1 1 0 010 1.414L9.414 9H17a1 1 0 110 2H9.414l1.293 1.293a1 1 0 01-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+					Đăng nhập
+				</RouterLink>
 				<div v-else class="relative">
 					<!-- Dropdown Trigger -->
 					<button @click="isDropdownOpen = !isDropdownOpen" class="relative rounded-full p-2 hover:bg-gray-100 dark:hover:bg-gray-800">

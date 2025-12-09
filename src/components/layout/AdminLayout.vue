@@ -39,6 +39,15 @@
 				</RouterLink>
 
 				<RouterLink
+					to="/admin/invoices"
+					class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
+					:class="$route.path.startsWith('/admin/invoices') ? 'bg-gray-100 dark:bg-gray-800 font-medium' : ''"
+				>
+					<svg class="h-5 w-5 text-gray-600 group-hover:text-gray-800" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+					Invoices
+				</RouterLink>
+
+				<RouterLink
 					to="/admin/users"
 					class="group flex items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
 					:class="$route.path.startsWith('/admin/users') ? 'bg-gray-100 dark:bg-gray-800 font-medium' : ''"
@@ -100,6 +109,7 @@
 							<RouterLink @click="showSidebar = false" to="/admin" class="py-2">Dashboard</RouterLink>
 							<RouterLink @click="showSidebar = false" to="/admin/products" class="py-2">Products</RouterLink>
 							<RouterLink @click="showSidebar = false" to="/admin/orders" class="py-2">Orders</RouterLink>
+							<RouterLink @click="showSidebar = false" to="/admin/invoices" class="py-2">Invoices</RouterLink>
 							<RouterLink @click="showSidebar = false" to="/admin/users" class="py-2">Users</RouterLink>
 							<RouterLink @click="showSidebar = false" to="/admin/banners" class="py-2">Banners</RouterLink>
 							<RouterLink @click="showSidebar = false" to="/admin/reports" class="py-2">Reports</RouterLink>
