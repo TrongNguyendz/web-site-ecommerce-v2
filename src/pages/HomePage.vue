@@ -5,7 +5,7 @@
 		<h2 class="mb-3 flex items-center justify-between text-lg font-semibold">
 			<span>Sản phẩm</span>
 		</h2>
-
+        <Chatbot />
 		<div class="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
 			<ProductCard
 				v-for="p in productsList"
@@ -51,7 +51,7 @@ import ProductCard from '../components/common/ProductCard.vue';
 import BannerCarousel from '../components/common/BannerCarousel.vue';
 import { useCartStore } from '../stores/cart';
 import { useProductsStore } from '../stores/products';
-
+import Chatbot from '../components/common/chatbot.vue';
 const bannerData = ref([
 	{
 		type: 'image',
