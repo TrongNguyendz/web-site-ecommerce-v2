@@ -127,6 +127,9 @@
 
 			<!-- Action Buttons -->
 			<div class="flex gap-3 pt-4">
+				<RouterLink :to="`/invoice/${lastOrderId}`" v-if="lastOrderId" class="flex-1 rounded-lg bg-purple-600 px-4 py-3 text-center font-semibold text-white hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-800">
+					📄 Xem hóa đơn
+				</RouterLink>
 				<RouterLink to="/orders" class="flex-1 rounded-lg bg-blue-600 px-4 py-3 text-center font-semibold text-white hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800">
 					Xem lịch sử đơn hàng
 				</RouterLink>
@@ -469,6 +472,7 @@ onMounted(() => {
 
 const cartItems = computed(() => cart.items);
 const validationError = ref('');
+const lastOrderId = ref(null);
 
 const paymentMethods = [
 	{
@@ -597,8 +601,9 @@ function completeOrder() {
 		subtotal: cart.subtotal
 	};
 
-	// Save order to store
-	orderStore.addOrder(orderData);
+	// Save order to store (addOrder returns the created order)
+	const newOrder = orderStore.addOrder(orderData);
+	if (newOrder && newOrder.id) lastOrderId.value = newOrder.id;
 
 	// Clear cart
 	if (typeof cart.clear === 'function') {

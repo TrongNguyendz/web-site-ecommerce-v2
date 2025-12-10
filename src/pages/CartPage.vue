@@ -14,7 +14,10 @@
 						<p class="text-sm text-gray-500">{{ formatCurrency(it.price) }}</p>
 					<div class="mt-2 flex items-center gap-2">
 						<input type="number" min="1" class="w-20 rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-900" :value="it.quantity" @input="updateQty(it.id, $event.target.value)" />
-						<button class="text-sm text-red-600 underline" @click="remove(it.id)">Xóa</button>
+						<button @click="remove(it.id)" aria-label="Xóa sản phẩm" title="Xóa" class="flex h-10 w-10 items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 dark:bg-gray-800 dark:text-red-400 p-2 shadow-sm">
+							<img :src="trashIcon" alt="Xóa" class="h-5 w-5" />
+							<span class="sr-only">Xóa</span>
+						</button>
 					</div>
 					</div>
 				</li>
@@ -33,6 +36,7 @@ import { computed } from 'vue';
 import { useCartStore } from '../stores/cart';
 import { useRouter } from 'vue-router';
 import { formatCurrency } from '../utils/helpers';
+import trashIcon from '../assets/delete.png';
 
 const cart = useCartStore();
 const items = computed(() => cart.items);

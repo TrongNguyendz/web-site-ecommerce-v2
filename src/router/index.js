@@ -19,6 +19,7 @@ const ProfilePage = () => import('../pages/ProfilePage.vue');
 const OrderHistory = () => import('../pages/OrderHistory.vue');
 const OrderDetail = () => import('../pages/OrderDetail.vue');
 const OrderTracking = () => import('../pages/OrderTracking.vue');
+const Invoice = () => import('../pages/Invoice.vue');
 
 // Admin pages
 const AdminWelcome = () => import('../pages/admin/AdminWelcome.vue');
@@ -28,6 +29,7 @@ const OrderManagement = () => import('../pages/admin/OrderManagement.vue');
 const UserManagement = () => import('../pages/admin/UserManagement.vue');
 const BannerManagement = () => import('../pages/admin/BannerManagement.vue');
 const ReportPage = () => import('../pages/admin/ReportPage.vue');
+const AdminInvoiceManagement = () => import('../pages/admin/AdminInvoiceManagement.vue');
 
 const routes = [
 	{ path: '/', component: HomePage },
@@ -46,6 +48,7 @@ const routes = [
 	{ path: '/orders', component: OrderHistory, meta: { requiresAuth: true } },
 	{ path: '/orders/:id', component: OrderDetail, meta: { requiresAuth: true } },
 	{ path: '/tracking/:orderId', component: OrderTracking, meta: { requiresAuth: true } },
+	{ path: '/invoice/:id', component: Invoice, meta: { requiresAuth: true } },
 
 	{ path: '/admin/welcome', component: AdminWelcome, meta: { requiresAdmin: true } },
 	{ path: '/admin', component: AdminDashboard, meta: { requiresAdmin: true } },
@@ -53,7 +56,8 @@ const routes = [
 	{ path: '/admin/orders', component: OrderManagement, meta: { requiresAdmin: true } },
 	{ path: '/admin/users', component: UserManagement, meta: { requiresAdmin: true } },
 	{ path: '/admin/banners', component: BannerManagement, meta: { requiresAdmin: true } },
-	{ path: '/admin/reports', component: ReportPage, meta: { requiresAdmin: true } }
+	{ path: '/admin/reports', component: ReportPage, meta: { requiresAdmin: true } },
+	{ path: '/admin/invoices', component: AdminInvoiceManagement, meta: { requiresAdmin: true } }
 ];
 
 // Add catch-all route for 404
