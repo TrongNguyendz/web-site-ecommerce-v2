@@ -1,15 +1,8 @@
 import axios from "axios"; 
 
-export const getListBanners = async (token) => {
-    if (!token) throw new Error('Token is required');
-    return await axios.get('http://localhost:3000/api/v1/admin/banners',
-        {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                // Không set Content-Type → axios tự set multipart/form-data + boundary
-            }
-        }
-    );
+export const getListBanners = async () => {
+    // if (!token) throw new Error('Token is required');
+    return await axios.get('http://localhost:3000/api/v1/admin/banners');
 }
 
 

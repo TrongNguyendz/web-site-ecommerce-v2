@@ -67,7 +67,7 @@ async function loadBanners() {
   try {
     bannerLoading.value = true;
 
-    const response = await getListBanners(user.token);
+    const response = await getListBanners();
     
     const rawBanners = response.data.data; // mảng banner từ API
     
