@@ -49,33 +49,52 @@
 import { onMounted, ref, computed, watch } from 'vue';
 import ProductCard from '../components/common/ProductCard.vue';
 import BannerCarousel from '../components/common/BannerCarousel.vue';
+import Chatbot from '../components/common/chatbot.vue';
 import { useCartStore } from '../stores/cart';
 import { useProductsStore } from '../stores/products';
-import Chatbot from '../components/common/chatbot.vue';
-const bannerData = ref([
-	{
-		type: 'image',
-		src: 'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?q=80&w=2070&auto=format&fit=crop',
-		title: 'Bộ sưu tập mùa hè',
-		subtitle: 'Giảm giá đặc biệt cho tất cả các mặt hàng.'
-	},
-	{
-		type: 'video',
-		src: 'https://videos.pexels.com/video-files/854171/854171-hd_1920_1080_25fps.mp4',
-		title: 'Phong cách mới, Năng lượng mới',
-		subtitle: 'Khám phá ngay.'
-	},
-	{
-		type: 'image',
-		src: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070&auto=format&fit=crop',
-		title: 'Siêu giảm giá cuối tuần',
-		subtitle: 'Đừng bỏ lỡ các ưu đãi tuyệt vời.'
-	}
-]);
+import { getListBanners } from '../utils/banner_service_api'; // Đường dẫn đúng tới file của bạn
+import { useUserStore } from "../stores/user";
 
+const user = useUserStore();
 const cart = useCartStore();
 const productsStore = useProductsStore();
 
+// ===== BANNER =====
+const bannerData = ref([]);
+const bannerLoading = ref(true);
+
+async function loadBanners() {
+  try {
+    bannerLoading.value = true;
+
+    const response = await getListBanners(user.token);
+    
+    const rawBanners = response.data.data; // mảng banner từ API
+    
+    bannerData.value = rawBanners.map(banner => ({
+      type: banner.link_type === 'video' ? 'video' : 'image',
+      src: banner.link_type === 'video' ? `http://localhost:3006${banner.image_url}` : `http://localhost:3006${banner.image_url}`,
+      title: banner.title,
+      subtitle: banner.description,
+      link: banner.link || null
+    }));
+  } catch (err) {
+    console.error('Lỗi tải banner:', err);
+    // Nếu lỗi vẫn hiển thị banner mẫu để không bị trắng trang
+    bannerData.value = [
+      {
+        type: 'image',
+        src: 'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?q=80&w=2070&auto=format&fit=crop',
+        title: 'Đang tải banner...',
+        subtitle: 'Vui lòng thử lại sau.'
+      }
+    ];
+  } finally {
+    bannerLoading.value = false;
+  }
+}
+
+// ===== PRODUCTS (giữ nguyên như cũ) =====
 const page = ref(1);
 const pageSize = 12;
 const productsList = ref([]);
@@ -83,42 +102,40 @@ const productsList = ref([]);
 const totalPages = computed(() => Math.max(1, Math.ceil((productsStore.total || 0) / pageSize)));
 
 async function loadPage() {
-	const skip = (page.value - 1) * pageSize;
-	await productsStore.fetchList({ limit: pageSize, skip });
-	const items = productsStore.items ?? [];
-	productsList.value = (items ?? []).map((p) => ({
-		id: p.id,
-		name: p.title ?? p.name,
-		price: p.price,
-		brand: p.brand ?? 'Brand',
-		images: p.images ?? (p.thumbnail ? [p.thumbnail] : []),
-		image: p.thumbnail ?? (p.images?.[0] || 'https://picsum.photos/400')
-	}));
-	// Scroll to top after loading a new page so user sees the top of product list
-	if (typeof window !== 'undefined') {
-		window.scrollTo({ top: 0, behavior: 'smooth' });
-	}
+  const skip = (page.value - 1) * pageSize;
+  await productsStore.fetchList({ limit: pageSize, skip });
+  const items = productsStore.items ?? [];
+  productsList.value = items.map((p) => ({
+    id: p.id,
+    name: p.title ?? p.name,
+    price: p.price,
+    brand: p.brand ?? 'Brand',
+    images: p.images ?? (p.thumbnail ? [p.thumbnail] : []),
+    image: p.thumbnail ?? (p.images?.[0] || 'https://picsum.photos/400')
+  }));
+  if (typeof window !== 'undefined') {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 }
 
 function addToCart(p) {
-	cart.addItem(p, 1);
+  cart.addItem(p, 1);
 }
-function addWishlist() {
-	/* no-op demo */
-}
+function addWishlist() { /* no-op demo */ }
 
 function prevPage() {
-	if (page.value > 1) page.value -= 1;
+  if (page.value > 1) page.value -= 1;
 }
 function nextPage() {
-	if (page.value < totalPages.value) page.value += 1;
+  if (page.value < totalPages.value) page.value += 1;
 }
 
 watch(page, () => {
-	loadPage();
+  loadPage();
 });
 
 onMounted(async () => {
-	await loadPage();
+  await loadBanners();  // Tải banner trước
+  await loadPage();     // Sau đó tải sản phẩm
 });
 </script>

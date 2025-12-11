@@ -11,8 +11,11 @@
   "dependencies": {
     "@google/genai": "^1.32.0",
     "axios": "^1.7.7",
+    "html2pdf.js": "^0.12.1",
+    "iobuffer": "^6.0.1",
     "pinia": "^2.2.6",
     "pinia-plugin-persistedstate": "^3.2.3",
+    "rgbcolor": "^1.0.1",
     "vue": "^3.5.12",
     "vue-router": "^4.4.5"
   },

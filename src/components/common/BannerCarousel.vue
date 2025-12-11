@@ -1,5 +1,8 @@
 <template>
-  <div class="relative w-screen left-1/2 -translate-x-1/2 aspect-video md:aspect-[2.4/1] overflow-hidden">
+  <div 
+  class="relative w-screen left-1/2 -translate-x-1/2 aspect-video md:aspect-[2.4/1] overflow-hidden select-none"
+
+   >
     <!-- Slides container -->
     <div
       class="flex h-full transition-transform duration-500 ease-in-out"
@@ -59,53 +62,58 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watchEffect } from 'vue';
 
 const props = defineProps({
-	slides: {
-		type: Array,
-		required: true,
-		default: () => []
-	},
-	interval: {
-		type: Number,
-		default: 5000 // 5 seconds
-	}
+  slides: {
+    type: Array,
+    required: true,
+    default: () => []
+  },
+  interval: {
+    type: Number,
+    default: 5000
+  },
+  autoplay: {
+    type: Boolean,
+    default: true
+  }
 });
 
 const currentIndex = ref(0);
-let slideInterval = null;
+let timer = null;
 
 const totalSlides = computed(() => props.slides.length);
 
-function next() {
-	currentIndex.value = (currentIndex.value + 1) % totalSlides.value;
-}
+// Hàm chạy tiếp slide
+const next = () => {
+  if (totalSlides.value === 0) return;
+  currentIndex.value = (currentIndex.value + 1) % totalSlides.value;
+};
 
-function prev() {
-	currentIndex.value = (currentIndex.value - 1 + totalSlides.value) % totalSlides.value;
-}
+// Dọn dẹp và khởi động lại timer
+const resetTimer = () => {
+  if (timer) clearInterval(timer);
+  if (!props.autoplay || totalSlides.value <= 1) return;
 
-function goTo(index) {
-	currentIndex.value = index;
-}
+  timer = setInterval(next, props.interval);
+};
 
-function startAutoPlay() {
-	slideInterval = setInterval(next, props.interval);
-}
+// Quan trọng nhất: dùng watchEffect thay vì watch → theo dõi reactive thật sự
+watchEffect(() => {
+  // Theo dõi độ dài mảng + nội dung bất kỳ phần tử nào
+  props.slides.length;
+  // eslint-disable-next-line no-unused-expressions
+  props.slides[0]?.src; // trick để Vue biết mảng đã thay đổi nội dung
 
-function stopAutoPlay() {
-	clearInterval(slideInterval);
-	slideInterval = null;
-}
-
-onMounted(() => {
-	if (props.slides.length > 1) {
-		startAutoPlay();
-	}
+  currentIndex.value = 0; // reset về đầu khi có banner mới
+  resetTimer();
 });
 
-onUnmounted(() => {
-	stopAutoPlay();
-});
+// Hover pause / resume
+const handleMouseEnter = () => timer && clearInterval(timer);
+const handleMouseLeave = () => resetTimer();
+
+onMounted(() => resetTimer());
+onUnmounted(() => timer && clearInterval(timer));
 </script>

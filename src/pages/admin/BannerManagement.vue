@@ -17,7 +17,7 @@
 		<!-- Banner Grid -->
 		<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 			<div 
-				v-for="b in banners" 
+				v-for="b in bannerData" 
 				:key="b.id" 
 				class="group relative rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden bg-gray-50 dark:bg-gray-800 hover:shadow-lg transition-shadow"
 			>
@@ -264,39 +264,66 @@
 import { ref, reactive, onMounted } from 'vue';
 import AdminLayout from '../../components/layout/AdminLayout.vue';
 import { useUIStore } from '../../stores/ui';
-
+import { useUserStore } from '../../stores/user';
+import { getListBanners,updateBanner,createBanner, deleteBannerhehe } from '../../utils/banner_service_api';	
 const ui = useUIStore();
+const user = useUserStore();
+// ===== BANNER =====
+const bannerData = ref([]);
+const bannerLoading = ref(true);
+// Thêm biến để lưu File Object
+const fileToUpload = ref(null);
 
-const banners = ref([
-	{ 
-		id: 1, 
-		title: 'Sale 11.11', 
-		description: 'Giảm giá lên đến 50%',
-		type: 'image',
-		media: 'https://picsum.photos/1200/400?1',
-		link: '/'
-	},
-	{ 
-		id: 2, 
-		title: 'Xmas Special', 
-		description: 'Khuyến mãi mùa Giáng sinh',
-		type: 'image',
-		media: 'https://picsum.photos/1200/400?2',
-		link: '/'
-	}
-]);
+
+async function loadBanners() {
+  try {
+    bannerLoading.value = true;
+
+    const response = await getListBanners(user.token);
+    
+    const rawBanners = response.data.data; // mảng banner từ API
+    
+    bannerData.value = rawBanners.map(banner => ({
+	  id: banner.id,
+    //   type: banner.link_type === 'video' ? 'video' : 'image',
+    //   src: banner.link_type === 'video' ? `http://localhost:3006${banner.image_url}` : `http://localhost:3006${banner.image_url}`,
+      title: banner.title,
+      description: banner.description,
+	  type: banner.link_type === 'video' ? 'video' : 'image',
+      media: banner.link_type === 'video' ? `http://localhost:3006${banner.image_url}` : `http://localhost:3006${banner.image_url}`,
+      link: banner.link || null
+    }));
+  } catch (err) {
+    console.error('Lỗi tải banner:', err);
+    // Nếu lỗi vẫn hiển thị banner mẫu để không bị trắng trang
+    bannerData.value = [
+      {
+        type: 'image',
+        src: 'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?q=80&w=2070&auto=format&fit=crop',
+        title: 'Đang tải banner...',
+        subtitle: 'Vui lòng thử lại sau.'
+      }
+    ];
+  } finally {
+    bannerLoading.value = false;
+  }
+}
+
+
+
 
 // Load persisted banners from localStorage if present
-onMounted(() => {
-	try {
-		const raw = localStorage.getItem('admin_banners');
-		if (raw) {
-			const parsed = JSON.parse(raw);
-			if (Array.isArray(parsed)) banners.value = parsed;
-		}
-	} catch (e) {
-		console.error('Failed to load banners from localStorage', e);
-	}
+onMounted(async () => {
+	// try {
+	// 	const raw = localStorage.getItem('admin_banners');
+	// 	if (raw) {
+	// 		const parsed = JSON.parse(raw);
+	// 		if (Array.isArray(parsed)) banners.value = parsed;
+	// 	}
+	// } catch (e) {
+	// 	console.error('Failed to load banners from localStorage', e);
+	// }
+	await loadBanners();  // Tải banner trước
 });
 
 const showModal = ref(false);
@@ -347,7 +374,8 @@ function handleMediaUpload(event) {
 		ui.pushToast({ type: 'error', message: `File quá lớn (max ${sizeInMB}MB)` });
 		return;
 	}
-
+    // Lưu File Object gốc vào biến mới
+    fileToUpload.value = file; // <--- THÊM DÒNG NÀY
 	const reader = new FileReader();
 	reader.onload = (e) => {
 		formData.media = e.target?.result || '';
@@ -356,63 +384,93 @@ function handleMediaUpload(event) {
 	reader.readAsDataURL(file);
 }
 
-function saveBanner() {
-	if (!formData.title || !formData.media) {
-		ui.pushToast({ type: 'error', message: 'Vui lòng điền đầy đủ thông tin' });
-		return;
-	}
+const saveBanner = async () => {
+	// ... (Validate required fields) ...
+
+    // 1. Chuẩn bị dữ liệu cơ bản
+    const dataToSend = {
+        title: formData.title,
+        description: formData.description,
+        link_type: formData.type,
+        link: formData.link
+    };
+    
+    // 2. Xử lý trường media
+    if (fileToUpload.value) {
+        // Nếu có file mới, gửi File Object dưới trường 'media'
+        dataToSend.media = fileToUpload.value; 
+    }
+    // else {
+    //     // Nếu tạo mới mà không có file: Báo lỗi vì media là bắt buộc
+    //     ui.pushToast({ type: 'error', message: 'Vui lòng chọn ảnh hoặc video' });
+    //     return;
+    // }
+
 
 	try {
 		if (editingId.value) {
-			// Edit existing
-			const idx = banners.value.findIndex(b => b.id === editingId.value);
-			if (idx !== -1) {
-				banners.value[idx] = {
-					id: editingId.value,
-					title: formData.title,
-					description: formData.description,
-					type: formData.type,
-					media: formData.media,
-					link: formData.link
-				};
+			// Cập nhật banner
+			const res = await updateBanner(editingId.value, dataToSend, user.token);
+			if(res.data.success) {
 				ui.pushToast({ type: 'success', message: 'Cập nhật banner thành công' });
+			} else {
+				ui.pushToast({ type: 'error', message: 'Cập nhật banner thất bại' });
 			}
+				
 		} else {
-			// Add new
-			banners.value.unshift({
-				id: crypto.randomUUID(),
-				title: formData.title,
-				description: formData.description,
-				type: formData.type,
-				media: formData.media,
-				link: formData.link
-			});
-			ui.pushToast({ type: 'success', message: 'Thêm banner thành công' });
+			// Tạo banner mới
+			const res = await createBanner(dataToSend, user.token);
+			if(res.data.success) {
+				ui.pushToast({ type: 'success', message: 'Thêm banner thành công' });
+			} else {
+				ui.pushToast({ type: 'error', message: 'Thêm banner thất bại' });
+			}
 		}
-
-		// Save to localStorage
-		localStorage.setItem('admin_banners', JSON.stringify(banners.value));
+		
+        // Reset fileToUpload sau khi gửi thành công
+        fileToUpload.value = null;
+        
+		await loadBanners(); 
 		closeModal();
-	} catch (e) {
-		console.error('Error saving banner:', e);
-		ui.pushToast({ type: 'error', message: 'Lỗi khi lưu banner' });
+	} catch (err) {
+		console.error('Lỗi lưu banner:', err);
+		ui.pushToast({ type: 'error', message: 'Lưu banner thất bại, vui lòng thử lại' });
 	}
-}
-
+};
 function deleteBanner(banner) {
 	bannerToDelete.value = banner;
 	showDeleteModal.value = true;
 }
 
-function confirmDelete() {
+// function confirmDelete() {
+// 	if (bannerToDelete.value) {
+// 		banners.value = banners.value.filter(b => b.id !== bannerToDelete.value.id);
+// 		localStorage.setItem('admin_banners', JSON.stringify(banners.value));
+// 		ui.pushToast({ type: 'success', message: 'Xóa banner thành công' });
+// 		showDeleteModal.value = false;
+// 		bannerToDelete.value = null;
+// 	}
+// }
+const confirmDelete = async () => {
 	if (bannerToDelete.value) {
-		banners.value = banners.value.filter(b => b.id !== bannerToDelete.value.id);
-		localStorage.setItem('admin_banners', JSON.stringify(banners.value));
-		ui.pushToast({ type: 'success', message: 'Xóa banner thành công' });
-		showDeleteModal.value = false;
-		bannerToDelete.value = null;
+		try {
+			const res = await deleteBannerhehe(bannerToDelete.value.id, user.token);
+			if(res.data.success) {
+				ui.pushToast({ type: 'success', message: 'Xóa banner thành công' });
+				await loadBanners(); 
+			} else {
+				ui.pushToast({ type: 'error', message: 'Xóa banner thất bại' });
+			}
+		} catch (err) {
+			console.error('Lỗi xóa banner:', err);
+			ui.pushToast({ type: 'error', message: 'Xóa banner thất bại, vui lòng thử lại' });
+		} finally {
+			showDeleteModal.value = false;
+			bannerToDelete.value = null;
+		}
 	}
-}
+};
+
 </script>
 
 
