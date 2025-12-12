@@ -3,10 +3,18 @@
 		<BannerCarousel :slides="bannerData" class="mb-6" />
 
 		<h2 class="mb-3 flex items-center justify-between text-lg font-semibold">
-			<span>Sản phẩm</span>
+			<span>Sản phẩm nổi bật</span>
 		</h2>
+        
         <Chatbot />
-		<div class="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+
+        <!-- Loading Skeleton -->
+        <div v-if="productsStore.loading" class="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+			<div v-for="i in 4" :key="i" class="h-64 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800"></div>
+		</div>
+
+        <!-- Product Grid -->
+		<div v-else class="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
 			<ProductCard
 				v-for="p in productsList"
 				:key="p.id"
@@ -16,8 +24,7 @@
 			/>
 		</div>
 
-		<!-- Pagination -->
-		<div class="mt-6 flex items-center justify-center space-x-3">
+		<div v-if="totalPages > 1" class="mt-6 flex items-center justify-center space-x-3">
 			<button
 				@click="prevPage"
 				:disabled="page === 1"
@@ -49,44 +56,51 @@
 import { onMounted, ref, computed, watch } from 'vue';
 import ProductCard from '../components/common/ProductCard.vue';
 import BannerCarousel from '../components/common/BannerCarousel.vue';
-import Chatbot from '../components/common/chatbot.vue';
+import Chatbot from '../components/common/chatbot.vue'; // Component Chatbot 
 import { useCartStore } from '../stores/cart';
-import { useProductsStore } from '../stores/products';
-import { getListBanners } from '../utils/banner_service_api'; // Đường dẫn đúng tới file của bạn
+import { useProductsStore } from '../stores/products'; // Store sản phẩm mới
 import { useUserStore } from "../stores/user";
+import { getListBanners } from '../utils/banner_service_api'; // API Banner
 
 const user = useUserStore();
 const cart = useCartStore();
 const productsStore = useProductsStore();
 
-// ===== BANNER =====
 const bannerData = ref([]);
 const bannerLoading = ref(true);
 
 async function loadBanners() {
   try {
     bannerLoading.value = true;
-
     const response = await getListBanners();
+    const rawBanners = response.data.data || [];
     
-    const rawBanners = response.data.data; // mảng banner từ API
-    
-    bannerData.value = rawBanners.map(banner => ({
-      type: banner.link_type === 'video' ? 'video' : 'image',
-      src: banner.link_type === 'video' ? `http://localhost:3006${banner.image_url}` : `http://localhost:3006${banner.image_url}`,
-      title: banner.title,
-      subtitle: banner.description,
-      link: banner.link || null
-    }));
+    if (rawBanners.length > 0) {
+        bannerData.value = rawBanners.map(banner => ({
+            type: banner.link_type === 'video' ? 'video' : 'image',
+            src: banner.image_url.startsWith('http') ? banner.image_url : `http://localhost:3006${banner.image_url}`,
+            title: banner.title,
+            subtitle: banner.description,
+            link: banner.link || null
+        }));
+    } else {
+        throw new Error('No banner data');
+    }
   } catch (err) {
-    console.error('Lỗi tải banner:', err);
-    // Nếu lỗi vẫn hiển thị banner mẫu để không bị trắng trang
+    console.error('Lỗi tải banner, dùng dữ liệu mẫu:', err);
+    // Banner mẫu dự phòng
     bannerData.value = [
       {
         type: 'image',
         src: 'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?q=80&w=2070&auto=format&fit=crop',
-        title: 'Đang tải banner...',
-        subtitle: 'Vui lòng thử lại sau.'
+        title: 'Bộ sưu tập mùa hè',
+        subtitle: 'Giảm giá đặc biệt cho tất cả các mặt hàng.'
+      },
+      {
+        type: 'image',
+        src: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070&auto=format&fit=crop',
+        title: 'Siêu giảm giá cuối tuần',
+        subtitle: 'Đừng bỏ lỡ các ưu đãi tuyệt vời.'
       }
     ];
   } finally {
@@ -94,34 +108,60 @@ async function loadBanners() {
   }
 }
 
-// ===== PRODUCTS (giữ nguyên như cũ) =====
+
 const page = ref(1);
 const pageSize = 12;
-const productsList = ref([]);
 
-const totalPages = computed(() => Math.max(1, Math.ceil((productsStore.total || 0) / pageSize)));
+// Map dữ liệu từ Store (backend mới) sang UI
+const productsList = computed(() => {
+    // Lưu ý: Dùng store.products (số nhiều) thay vì store.items
+    const items = productsStore.products || [];
+    
+    return items.map((p) => {
+        // Logic lấy ảnh chuẩn: Ưu tiên ảnh primary
+        let imageUrl = 'https://via.placeholder.com/400x400?text=No+Image';
+        if (p.images && p.images.length > 0) {
+            const primary = p.images.find(img => img.is_primary);
+            imageUrl = primary ? primary.image_url : p.images[0].image_url;
+        }
 
+        return {
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            brand: p.category_name || 'Fashion',
+            image: imageUrl,
+            discount: p.discount_percent
+        };
+    });
+});
+
+// Tính tổng trang từ Pagination của Backend
+const totalPages = computed(() => {
+    if (productsStore.pagination && productsStore.pagination.pages) {
+        return productsStore.pagination.pages;
+    }
+    return 1;
+});
+
+// Hàm gọi API lấy sản phẩm
 async function loadPage() {
-  const skip = (page.value - 1) * pageSize;
-  await productsStore.fetchList({ limit: pageSize, skip });
-  const items = productsStore.items ?? [];
-  productsList.value = items.map((p) => ({
-    id: p.id,
-    name: p.title ?? p.name,
-    price: p.price,
-    brand: p.brand ?? 'Brand',
-    images: p.images ?? (p.thumbnail ? [p.thumbnail] : []),
-    image: p.thumbnail ?? (p.images?.[0] || 'https://picsum.photos/400')
-  }));
-  if (typeof window !== 'undefined') {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+    // SỬA: Dùng fetchProducts({ page, limit }) thay vì fetchList({ skip })
+    await productsStore.fetchProducts({ 
+        page: page.value, 
+        limit: pageSize 
+    });
+
+    if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 }
 
+// Các hàm sự kiện
 function addToCart(p) {
   cart.addItem(p, 1);
 }
-function addWishlist() { /* no-op demo */ }
+function addWishlist() { console.log('Wishlist click'); }
 
 function prevPage() {
   if (page.value > 1) page.value -= 1;
@@ -134,8 +174,11 @@ watch(page, () => {
   loadPage();
 });
 
+// ===== 3. LIFECYCLE =====
 onMounted(async () => {
-  await loadBanners();  // Tải banner trước
-  await loadPage();     // Sau đó tải sản phẩm
+  await Promise.all([
+      loadBanners(), // Load banner từ port 3006
+      loadPage()     // Load sản phẩm từ port 3002
+  ]);
 });
 </script>

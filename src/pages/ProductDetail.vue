@@ -1,580 +1,553 @@
 <template>
-	<section v-if="product">
-		<nav class="mb-4 text-sm text-gray-500">
-			<RouterLink to="/" class="hover:underline">Trang chủ</RouterLink> / 
-			<RouterLink to="/products" class="hover:underline">Sản phẩm</RouterLink> / 
-			<span class="text-gray-700 dark:text-gray-300">{{ product.name }}</span>
-		</nav>
-		<div class="grid gap-8 md:grid-cols-2">
-			<!-- Product Images -->
-			<div>
-				<!-- Main Image with Navigation -->
-				<div class="relative">
-					<img :src="selectedImage" :alt="product.name" class="w-full rounded-lg border object-cover dark:border-gray-800" />
-					
-					<!-- Previous Button -->
-					<button 
-						v-if="productImages.length > 1"
-						@click="previousImage"
-						class="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 p-2 hover:bg-white dark:bg-gray-800/80 dark:hover:bg-gray-800"
-						title="Ảnh trước (←)"
-					>
-						<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-						</svg>
-					</button>
-					
-					<!-- Next Button -->
-					<button 
-						v-if="productImages.length > 1"
-						@click="nextImage"
-						class="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 p-2 hover:bg-white dark:bg-gray-800/80 dark:hover:bg-gray-800"
-						title="Ảnh tiếp theo (→)"
-					>
-						<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-						</svg>
-					</button>
+  <section v-if="product">
+    <!-- Breadcrumb -->
+    <nav class="mb-4 text-sm text-gray-500">
+      <RouterLink to="/" class="hover:underline">Trang chủ</RouterLink> / 
+      <RouterLink to="/products" class="hover:underline">Sản phẩm</RouterLink> / 
+      <span class="text-gray-700 dark:text-gray-300 font-medium">{{ product.name }}</span>
+    </nav>
 
-					<!-- Image Counter -->
-					<div v-if="productImages.length > 1" class="absolute bottom-2 right-2 rounded-full bg-black/60 px-3 py-1 text-sm text-white">
-						{{ currentImageIndex + 1 }}/{{ productImages.length }}
-					</div>
-				</div>
+    <div class="grid gap-8 md:grid-cols-2">
+      <!-- CỘT TRÁI: ẢNH SẢN PHẨM -->
+      <div>
+        <div class="relative h-[500px] w-full rounded-lg border bg-gray-50 dark:border-gray-800 dark:bg-gray-900 flex items-center justify-center overflow-hidden">
+          <img 
+            :src="selectedImage || 'https://via.placeholder.com/600x600?text=No+Image'" 
+            :alt="product.name" 
+            class="max-h-full max-w-full object-contain transition-opacity duration-300"
+          />
+          
+          <!-- Nút điều hướng ảnh -->
+          <button v-if="productImages.length > 1" @click="previousImage" class="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 p-2 shadow-md hover:bg-white dark:bg-gray-800/80 dark:hover:bg-gray-800 transition">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+          </button>
+          <button v-if="productImages.length > 1" @click="nextImage" class="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 p-2 shadow-md hover:bg-white dark:bg-gray-800/80 dark:hover:bg-gray-800 transition">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+          </button>
+          <div v-if="productImages.length > 1" class="absolute bottom-2 right-2 rounded-full bg-black/60 px-3 py-1 text-xs text-white backdrop-blur-sm">
+            {{ currentImageIndex + 1 }} / {{ productImages.length }}
+          </div>
+        </div>
 
-				<!-- Thumbnail Gallery -->
-				<div v-if="productImages.length > 1" class="mt-4 flex gap-2 overflow-x-auto">
-					<img 
-						v-for="(img, idx) in productImages" 
-						:key="idx"
-						:src="img" 
-						:alt="`Product ${idx}`"
-						@click="selectImageByIndex(idx)"
-						class="h-20 w-20 shrink-0 cursor-pointer rounded border object-cover transition-all dark:border-gray-700"
-						:class="{ 'ring-2 ring-gray-900 dark:ring-gray-100': selectedImage === img }"
-					/>
-				</div>
-			</div>
+        <!-- Gallery -->
+        <div v-if="productImages.length > 1" class="mt-4 flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+          <img 
+            v-for="(img, idx) in productImages" :key="idx" :src="img" 
+            @click="selectImageByIndex(idx)"
+            class="h-20 w-20 shrink-0 cursor-pointer rounded border bg-white object-contain p-1 transition-all hover:border-gray-400 dark:bg-gray-800 dark:border-gray-700"
+            :class="{ 'ring-2 ring-gray-900 dark:ring-gray-100 border-transparent': selectedImage === img }"
+          />
+        </div>
+      </div>
 
-			<!-- Product Info -->
-			<div>
-				<h1 class="text-2xl font-semibold">{{ product.name }}</h1>
-				<p class="mt-2 text-gray-500">{{ product.brand }}</p>
-				
-				<!-- Rating -->
-				<div class="mt-3 flex items-center gap-2">
-					<div class="flex items-center">
-						<span v-for="i in 5" :key="i" class="text-yellow-400">★</span>
-					</div>
-					<span class="text-sm text-gray-600 dark:text-gray-400">({{ product.reviews ?? 23 }} đánh giá)</span>
-				</div>
+      <!-- CỘT PHẢI: THÔNG TIN -->
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">{{ product.name }}</h1>
+        <p class="mt-2 text-sm text-gray-500 font-mono">SKU: {{ product.sku }}</p>
+        
+        <!-- Rating -->
+        <div class="mt-3 flex items-center gap-2">
+          <div class="flex items-center text-yellow-400 text-lg">
+            <span v-for="i in 5" :key="i">{{ i <= Math.round(product.rating || 5) ? '★' : '☆' }}</span>
+          </div>
+          <span class="text-sm text-blue-600 hover:underline cursor-pointer" @click="activeTab = 'reviews'">
+            ({{ product.reviews || 0 }} đánh giá)
+          </span>
+        </div>
 
-				<p class="mt-4 text-2xl font-bold">{{ formatCurrency(product.price) }}</p>
+        <p class="mt-4 text-3xl font-bold text-red-600 dark:text-red-400">
+          {{ formatCurrency(product.price) }}
+        </p>
 
-				<!-- Color Selection -->
-				<div class="mt-6">
-					<label class="block text-sm font-semibold">Màu sắc: <span class="text-gray-600">{{ selectedColor }}</span></label>
-					<div class="mt-2 flex gap-3">
-						<button
-							v-for="color in product.colors"
-							:key="color"
-							@click="selectedColor = color"
-							class="h-8 w-8 rounded-full border-2 transition-all"
-							:style="{ backgroundColor: color }"
-							:class="{ 'ring-2 ring-offset-2 ring-gray-900 dark:ring-gray-100': selectedColor === color }"
-							:title="color"
-						/>
-					</div>
-				</div>
+        <!-- 1. CHỌN MÀU SẮC -->
+        <div v-if="colors.length > 0" class="mt-6">
+            <label class="block text-sm font-semibold mb-2">Màu sắc: <span class="text-gray-600 font-normal">{{ selectedColor?.name }}</span></label>
+            <div class="flex gap-3">
+                <button
+                    v-for="color in colors"
+                    :key="color.hex"
+                    @click="selectedColor = color"
+                    class="h-8 w-8 rounded-full border-2 transition-all relative"
+                    :style="{ backgroundColor: color.hex }"
+                    :class="{ 'ring-2 ring-offset-2 ring-gray-900 dark:ring-gray-100 border-transparent': selectedColor?.hex === color.hex, 'border-gray-300 dark:border-gray-600': selectedColor?.hex !== color.hex }"
+                    :title="color.name"
+                >
+                </button>
+            </div>
+        </div>
 
-				<!-- Size Selection -->
-				<div class="mt-6">
-					<label class="block text-sm font-semibold">Kích cỡ: <span class="text-gray-600">{{ selectedSize }}</span></label>
-					<div class="mt-2 flex gap-2">
-						<button
-							v-for="size in product.sizes"
-							:key="size"
-							@click="selectedSize = size"
-							class="rounded border px-4 py-2 font-medium transition-all dark:border-gray-700"
-							:class="{ 
-								'bg-gray-900 text-white dark:bg-gray-100 dark:text-black': selectedSize === size,
-								'border-gray-300 hover:border-gray-400 dark:hover:border-gray-600': selectedSize !== size
-							}"
-						>
-							{{ size }}
-						</button>
-					</div>
-				</div>
+        <!-- 2. CHỌN KÍCH CỠ -->
+        <div v-if="sizes.length > 0" class="mt-6">
+            <label class="block text-sm font-semibold mb-2">Kích cỡ: <span class="text-gray-600 font-normal">{{ selectedSize }}</span></label>
+            <div class="flex gap-2 flex-wrap">
+                <button
+                    v-for="size in sizes"
+                    :key="size"
+                    @click="selectedSize = size"
+                    class="rounded border px-4 py-2 font-medium transition-all min-w-[3rem]"
+                    :class="{ 
+                        'bg-gray-900 text-white border-gray-900 dark:bg-gray-100 dark:text-black': selectedSize === size,
+                        'border-gray-300 hover:border-gray-400 text-gray-700 dark:border-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800': selectedSize !== size
+                    }"
+                >
+                    {{ size }}
+                </button>
+            </div>
+        </div>
 
-				<!-- Product Description -->
-				<p class="mt-6 text-sm text-gray-600 dark:text-gray-300">{{ product.description }}</p>
+        <!-- Mô tả ngắn -->
+        <div class="mt-6 p-4 bg-gray-50 rounded-lg dark:bg-gray-800/50">
+           <p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-3">
+             {{ product.shortDescription || product.description }}
+           </p>
+        </div>
 
-				<!-- Stock Status -->
-				<div class="mt-4">
-					<p v-if="product.inStock" class="text-sm font-semibold text-green-600 dark:text-green-400">Còn {{ product.stock ?? 'nhiều' }} hàng</p>
-					<p v-else class="text-sm font-semibold text-red-600 dark:text-red-400">Hết hàng</p>
-				</div>
+        <!-- Trạng thái kho -->
+        <div class="mt-6 flex items-center gap-2">
+          <div class="h-2.5 w-2.5 rounded-full" :class="product.inStock ? 'bg-green-500' : 'bg-red-500'"></div>
+          <p v-if="product.inStock" class="text-sm font-semibold text-green-600 dark:text-green-400">
+            Còn hàng ({{ product.stock }})
+          </p>
+          <p v-else class="text-sm font-semibold text-red-600 dark:text-red-400">Hết hàng</p>
+        </div>
 
-				<!-- Quantity & Buttons -->
-				<div class="mt-6 flex gap-3">
-					<div class="flex items-center rounded border dark:border-gray-700">
-						<button @click="qty = Math.max(1, qty - 1)" class="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800">−</button>
-						<input v-model.number="qty" type="number" min="1" class="w-16 border-0 bg-transparent text-center" />
-						<button @click="qty += 1" class="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800">+</button>
-					</div>
-					<button 
-						:disabled="!product.inStock"
-						class="flex-1 rounded bg-gray-900 px-4 py-2 text-white hover:bg-gray-800 disabled:opacity-50 dark:bg-gray-100 dark:text-black dark:hover:bg-gray-200" 
-						@click="addToCart"
-					>
-						THÊM VÀO GIỎ HÀNG
-					</button>
-					<button 
-						@click="toggleWishlist"
-						:class="{ 'text-red-500': wishlist.isInWishlist(product.id) }"
-						class="rounded border px-4 py-2 hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800"
-						:title="wishlist.isInWishlist(product.id) ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'"
-					>
-						{{ wishlist.isInWishlist(product.id) ? '♥' : '♡' }}
-					</button>
-				</div>
+        <!-- Nút Mua Hàng -->
+        <div class="mt-6 flex gap-3">
+          <div class="flex items-center rounded border bg-white dark:bg-gray-900 dark:border-gray-700">
+            <button @click="qty = Math.max(1, qty - 1)" class="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition">−</button>
+            <input v-model.number="qty" type="number" min="1" :max="product.stock" class="w-12 border-0 bg-transparent text-center focus:ring-0 appearance-none" />
+            <button @click="qty = Math.min(product.stock, qty + 1)" class="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition">+</button>
+          </div>
 
-				<!-- Additional Info -->
-				<div class="mt-6 border-t pt-4 dark:border-gray-700">
-					<p class="text-sm text-blue-600 dark:text-blue-400">
-						<a href="#" class="hover:underline">Tìm sản phẩm còn hàng trong của hàng</a>
-					</p>
-				</div>
-			</div>
-		</div>
+          <button 
+            :disabled="!product.inStock"
+            class="flex-1 rounded-lg bg-gray-900 px-6 py-3 font-bold text-white shadow-lg hover:bg-gray-800 hover:shadow-xl active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all dark:bg-gray-100 dark:text-black dark:hover:bg-gray-200" 
+            @click="addToCart"
+          >
+            THÊM VÀO GIỎ HÀNG
+          </button>
+          
+          <button @click="toggleWishlist" class="rounded-lg border px-4 py-2 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" :fill="wishlist.isInWishlist(product.id) ? 'currentColor' : 'none'" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
 
-		<!-- Product Details Section -->
-		<div class="mt-12 border-t pt-8 dark:border-gray-800">
-			<div class="flex gap-4 border-b dark:border-gray-800">
-				<button 
-					@click="activeTab = 'description'"
-					class="px-4 py-2 font-semibold"
-					:class="{ 'border-b-2 border-gray-900 dark:border-gray-100': activeTab === 'description' }"
-				>
-					Mô tả
-				</button>
-				<button 
-					@click="activeTab = 'reviews'"
-					class="px-4 py-2 font-semibold"
-					:class="{ 'border-b-2 border-gray-900 dark:border-gray-100': activeTab === 'reviews' }"
-				>
-					Đánh giá ({{ product.reviews ?? 23 }})
-				</button>
-				<button 
-					@click="activeTab = 'tryon'"
-					class="px-4 py-2 font-semibold"
-					:class="{ 'border-b-2 border-gray-900 dark:border-gray-100': activeTab === 'tryon' }"
-				>
-					Thử đồ
-				</button>
-			</div>
+    <!-- TABS -->
+    <div class="mt-16 border-t pt-8 dark:border-gray-800">
+      <div class="flex gap-8 border-b dark:border-gray-800 overflow-x-auto">
+        <button 
+            @click="activeTab = 'description'" 
+            class="pb-4 text-lg font-semibold transition-colors relative whitespace-nowrap" 
+            :class="activeTab === 'description' ? 'text-gray-900 dark:text-white' : 'text-gray-500 hover:text-gray-700'"
+        >
+          Mô tả <div v-if="activeTab === 'description'" class="absolute bottom-0 left-0 w-full h-0.5 bg-gray-900 dark:bg-white"></div>
+        </button>
+        <button 
+            @click="activeTab = 'reviews'" 
+            class="pb-4 text-lg font-semibold transition-colors relative whitespace-nowrap" 
+            :class="activeTab === 'reviews' ? 'text-gray-900 dark:text-white' : 'text-gray-500 hover:text-gray-700'"
+        >
+          Đánh giá ({{ product.reviews }}) <div v-if="activeTab === 'reviews'" class="absolute bottom-0 left-0 w-full h-0.5 bg-gray-900 dark:bg-white"></div>
+        </button>
+        <!-- Tab Thử đồ Mới -->
+        <button 
+            @click="activeTab = 'tryon'" 
+            class="pb-4 text-lg font-semibold transition-colors relative whitespace-nowrap" 
+            :class="activeTab === 'tryon' ? 'text-gray-900 dark:text-white' : 'text-gray-500 hover:text-gray-700'"
+        >
+          Thử đồ với AI <div v-if="activeTab === 'tryon'" class="absolute bottom-0 left-0 w-full h-0.5 bg-gray-900 dark:bg-white"></div>
+        </button>
+      </div>
 
-			<!-- Description Tab -->
-			<div v-if="activeTab === 'description'" class="mt-6">
-				<h3 class="mb-3 text-lg font-semibold">Mô tả chi tiết</h3>
-				<div class="prose max-w-none text-gray-700 dark:prose-invert dark:text-gray-300">
-					<p>{{ product.longDescription ?? 'Đang cập nhật...' }}</p>
-				</div>
-			</div>
+      <div class="py-8 min-h-[300px]">
+        <!-- Nội dung Mô tả -->
+        <div v-if="activeTab === 'description'" class="prose max-w-none text-gray-700 dark:prose-invert dark:text-gray-300">
+          <p class="whitespace-pre-line leading-relaxed text-lg">{{ product.description || 'Chưa có mô tả chi tiết.' }}</p>
+        </div>
 
-			<!-- Reviews Tab -->
-			<div v-else-if="activeTab === 'reviews'" class="mt-6">
-				<h3 class="mb-6 text-lg font-semibold">Đánh giá sản phẩm</h3>
-				
-				<!-- Review Summary -->
-				<div class="mb-8 flex gap-8">
-					<div>
-						<p class="text-3xl font-bold">5.0</p>
-						<div class="mt-2 flex items-center">
-							<span v-for="i in 5" :key="i" class="text-yellow-400">★</span>
-						</div>
-						<p class="mt-2 text-sm text-gray-600 dark:text-gray-400">{{ product.reviews ?? 23 }} đánh giá</p>
-					</div>
-					<div class="flex flex-1 flex-col gap-2">
-						<div v-for="rating in [5, 4, 3, 2, 1]" :key="rating" class="flex items-center gap-2">
-							<span class="w-8 text-sm">{{ rating }}★</span>
-							<div class="h-2 flex-1 rounded-full bg-gray-200 dark:bg-gray-700">
-								<div class="h-full rounded-full bg-yellow-400" :style="{ width: (rating === 5 ? 80 : rating === 4 ? 15 : 5) + '%' }"></div>
-							</div>
-							<span class="w-8 text-right text-sm text-gray-600 dark:text-gray-400">{{ rating === 5 ? 19 : rating === 4 ? 3 : 1 }}</span>
-						</div>
-					</div>
-				</div>
+       <!-- Nội dung Đánh giá -->
+        <div v-else-if="activeTab === 'reviews'" class="space-y-8">
+          
+          <!-- PHẦN 1: FORM VIẾT ĐÁNH GIÁ (Thêm mới) -->
+          <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-xl border dark:border-gray-700">
+              <h3 class="font-bold text-lg mb-4 text-gray-900 dark:text-white">Viết đánh giá của bạn</h3>
+              
+              <!-- Kiểm tra: Có Token (Đã đăng nhập) thì hiện Form -->
+              <div v-if="userStore.token">
+                  <form @submit.prevent="submitReview">
+                      <!-- Chọn sao -->
+                      <div class="mb-4">
+                          <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Bạn cảm thấy thế nào?</label>
+                          <div class="flex gap-2">
+                              <button 
+                                  type="button" 
+                                  v-for="star in 5" 
+                                  :key="star"
+                                  @click="newReview.rating = star"
+                                  class="text-2xl transition-transform hover:scale-110"
+                                  :class="star <= newReview.rating ? 'text-yellow-400' : 'text-gray-300'"
+                              >
+                                  ★
+                              </button>
+                          </div>
+                      </div>
 
-				<!-- Individual Reviews -->
-				<div class="space-y-4 border-t pt-6 dark:border-gray-700">
-					<div v-for="review in productReviews" :key="review.id" class="border-b pb-4 dark:border-gray-700">
-						<div class="flex items-start justify-between">
-							<div>
-								<p class="font-semibold">{{ review.author }}</p>
-								<div class="mt-1 flex items-center gap-2">
-									<span v-for="i in review.rating" :key="i" class="text-sm text-yellow-400">★</span>
-									<span v-for="i in (5 - review.rating)" :key="i" class="text-sm text-gray-300">★</span>
-								</div>
-							</div>
-							<span class="text-sm text-gray-500">{{ review.date }}</span>
-						</div>
-						<p class="mt-2 text-sm text-gray-700 dark:text-gray-300">{{ review.comment }}</p>
-					</div>
-				</div>
-			</div>
+                      <!-- Nhập nội dung -->
+                      <div class="mb-4">
+                          <label class="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Nội dung đánh giá</label>
+                          <textarea 
+                              v-model="newReview.comment" 
+                              rows="3" 
+                              class="w-full p-3 rounded border dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-white"
+                              placeholder="Chia sẻ cảm nhận của bạn về sản phẩm..."
+                              required
+                          ></textarea>
+                      </div>
 
-			<!-- Try On Tab -->
-			<div v-else-if="activeTab === 'tryon'" class="mt-6">
-				<h3 class="mb-6 text-lg font-semibold">Thử đồ với AI</h3>
-				<p class="mb-6 text-sm text-gray-600 dark:text-gray-400">Tải ảnh của bạn lên và chọn sản phẩm để xem cách nó trông trên bạn</p>
-				
-				<div class="grid gap-8 md:grid-cols-2">
-					<!-- Upload Image Section -->
-					<div>
-						<div class="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center dark:border-gray-600">
-							<svg v-if="!tryOnImage" class="mx-auto mb-4 h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-							</svg>
-							<img v-else :src="tryOnImage" alt="Your image" class="mx-auto mb-4 max-h-64 rounded" />
-							
-							<p v-if="!tryOnImage" class="mb-4 text-gray-600 dark:text-gray-400">
-								Kéo và thả ảnh của bạn vào đây hoặc
-							</p>
-							
-							<input 
-								ref="fileInput"
-								type="file" 
-								accept="image/*"
-								@change="handleImageUpload"
-								class="hidden"
-							/>
-							
-							<button 
-								@click="$refs.fileInput.click()"
-								class="inline-block rounded bg-gray-900 px-4 py-2 text-white hover:bg-gray-800 dark:bg-gray-100 dark:text-black dark:hover:bg-gray-200"
-							>
-								{{ tryOnImage ? 'Thay ảnh' : 'Chọn ảnh' }}
-							</button>
-							
-							<button 
-								v-if="tryOnImage"
-								@click="clearImage"
-								class="ml-2 rounded border border-red-600 px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
-							>
-								Xóa
-							</button>
-						</div>
-					</div>
+                      <button 
+                          type="submit" 
+                          class="bg-gray-900 text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-gray-200"
+                          :disabled="isSubmitting"
+                      >
+                          {{ isSubmitting ? 'Đang gửi...' : 'Gửi đánh giá' }}
+                      </button>
+                  </form>
+              </div>
 
-					<!-- Selected Product Preview -->
-					<div v-if="selectedTryOnProduct" class="rounded-lg border border-blue-300 bg-blue-50 p-6 dark:border-blue-800 dark:bg-blue-950/30">
-						<h4 class="mb-4 font-semibold text-blue-900 dark:text-blue-100">Sản phẩm đã chọn</h4>
-						<div class="flex gap-4">
-							<img :src="selectedTryOnProduct.image" :alt="selectedTryOnProduct.name" class="h-32 w-32 rounded-lg object-cover" />
-							<div class="flex-1">
-								<h5 class="text-lg font-semibold">{{ selectedTryOnProduct.name }}</h5>
-								<p class="text-sm text-gray-600 dark:text-gray-400">{{ selectedTryOnProduct.brand }}</p>
-								<p class="mt-2 text-xl font-bold text-blue-600 dark:text-blue-400">{{ formatCurrency(selectedTryOnProduct.price) }}</p>
-								<button 
-									@click="selectedTryOnProduct = null; tryOnSearch = ''"
-									class="mt-3 rounded border border-blue-600 px-3 py-1 text-sm text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-950"
-								>
-									Chọn sản phẩm khác
-								</button>
-							</div>
-						</div>
-					</div>
+              <!-- Nếu chưa đăng nhập -->
+              <div v-else class="text-center py-4 text-gray-500">
+                  Vui lòng <router-link to="/auth" class="text-blue-600 hover:underline font-medium">đăng nhập</router-link> để viết đánh giá.
+              </div>
+          </div>
 
-					<!-- Product Selection Section (Hidden when product selected) -->
-					<div v-if="!selectedTryOnProduct">
-						<h4 class="mb-4 font-semibold">Chọn sản phẩm để thử</h4>
-						
-						<div class="mb-4 flex gap-2">
-							<input 
-								v-model="tryOnSearch"
-								type="text"
-								placeholder="Tìm sản phẩm..."
-								class="flex-1 rounded border border-gray-300 px-3 py-2 dark:border-gray-700 dark:bg-gray-900"
-							/>
-						</div>
+          <!-- PHẦN 2: DANH SÁCH ĐÁNH GIÁ (Giữ nguyên) -->
+          <div>
+            <h3 class="font-bold text-xl mb-4 text-gray-900 dark:text-white">Khách hàng nhận xét ({{ reviews.length }})</h3>
+            
+            <div v-if="reviews.length === 0" class="text-center py-10 text-gray-500 border border-dashed rounded-lg">
+              Chưa có đánh giá nào. Hãy là người đầu tiên!
+            </div>
 
-						<div class="max-h-96 space-y-3 overflow-y-auto">
-							<div v-if="loadingProducts" class="space-y-2 py-4">
-								<div v-for="i in 3" :key="i" class="h-20 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
-							</div>
+            <div v-else class="space-y-6">
+               <div v-for="review in reviews" :key="review.id" class="border-b pb-6 dark:border-gray-700 last:border-0">
+                 <div class="flex justify-between items-start mb-2">
+                   <div class="flex gap-3">
+                      <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-600">
+                          {{ (review.author || 'U').charAt(0).toUpperCase() }}
+                      </div>
+                      <div>
+                          <h4 class="font-bold text-gray-900 dark:text-white">{{ review.author || 'Người dùng' }}</h4>
+                          <div class="flex text-yellow-400 text-sm mt-1"><span v-for="i in 5" :key="i">{{ i <= review.rating ? '★' : '☆' }}</span></div>
+                      </div>
+                   </div>
+                   <span class="text-xs text-gray-400">{{ formatDate(review.created_at) }}</span>
+                 </div>
+                 <p class="text-gray-700 dark:text-gray-300 ml-14">{{ review.comment }}</p>
+                 <div v-if="review.admin_reply" class="ml-14 mt-3 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-100 dark:border-blue-800">
+    <div class="flex items-center gap-2 mb-1">
+        <span class="bg-blue-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">Shop phản hồi</span>
+        <span class="text-xs text-gray-400">{{ formatDate(review.updated_at) }}</span>
+    </div>
+    <p class="text-sm text-gray-800 dark:text-gray-200">
+        {{ review.admin_reply }}
+    </p>
+</div>
+                 <!-- Nút Xóa -->
+                 <div class="ml-14 mt-2" v-if="userStore.profile?.role === 'admin' || userStore.profile?.id === review.user_id">
+                      <button @click="handleDeleteReview(review.id)" class="text-xs text-red-500 hover:underline">Xóa bình luận này</button>
+                 </div>
+               </div>
+            </div>
+          </div>
+        </div>
 
-							<div 
-								v-for="prod in filteredStoreProducts"
-								:key="prod.id"
-								@click="selectedTryOnProduct = prod"
-								class="flex cursor-pointer gap-3 rounded border border-gray-300 p-3 transition-all hover:border-gray-400 dark:border-gray-700 dark:hover:border-gray-600"
-							>
-								<img :src="prod.image" :alt="prod.name" class="h-16 w-16 rounded object-cover" />
-								<div class="flex-1 text-left">
-									<p class="font-semibold">{{ prod.name }}</p>
-									<p class="text-sm text-gray-600 dark:text-gray-400">{{ formatCurrency(prod.price) }}</p>
-									<p class="mt-1 text-xs text-gray-500">{{ prod.brand }}</p>
-								</div>
-							</div>
+        <!-- Nội dung Thử đồ -->
+        <div v-else-if="activeTab === 'tryon'" class="mt-2">
+            <h3 class="mb-6 text-xl font-bold">Phòng thử đồ ảo</h3>
+            <p class="mb-6 text-gray-600 dark:text-gray-400">Tải ảnh của bạn lên và chọn sản phẩm để ướm thử.</p>
+            
+            <div class="grid gap-8 md:grid-cols-2">
+                <!-- Cột 1: Upload Ảnh User -->
+                <div>
+                    <div class="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center dark:border-gray-600 bg-gray-50 dark:bg-gray-800">
+                        <div v-if="!tryOnImage">
+                            <svg class="mx-auto mb-4 h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                            <p class="mb-4 text-gray-600 dark:text-gray-400">Kéo thả hoặc chọn ảnh của bạn</p>
+                            <button @click="$refs.fileInput.click()" class="inline-block rounded-lg bg-gray-900 px-6 py-2 text-white hover:bg-gray-800 dark:bg-white dark:text-black">Chọn ảnh</button>
+                        </div>
+                        <div v-else class="relative">
+                            <img :src="tryOnImage" class="mx-auto max-h-80 rounded shadow-md object-contain" />
+                            <button @click="clearTryOnImage" class="mt-4 text-red-600 hover:underline">Xóa ảnh</button>
+                        </div>
+                        <input ref="fileInput" type="file" accept="image/*" @change="handleTryOnImageUpload" class="hidden" />
+                    </div>
+                </div>
 
-							<p v-if="!loadingProducts && tryOnSearch && filteredStoreProducts.length === 0" class="py-4 text-center text-sm text-gray-600 dark:text-gray-400">
-								Không tìm thấy sản phẩm
-							</p>
-							
-							<p v-if="!loadingProducts && storeProducts.length === 0 && !tryOnSearch" class="py-4 text-center text-sm text-gray-600 dark:text-gray-400">
-								Bắt đầu gõ để tìm kiếm sản phẩm...
-							</p>
-						</div>
-					</div>
-				</div>
+                <!-- Cột 2: Chọn sản phẩm (Search) -->
+                <div>
+                    <div v-if="selectedTryOnProduct" class="rounded-lg border bg-blue-50 p-6 dark:border-blue-800 dark:bg-blue-900/20">
+                        <h4 class="mb-4 font-semibold text-blue-900 dark:text-blue-100">Đang thử sản phẩm:</h4>
+                        <div class="flex gap-4">
+                            <img :src="selectedTryOnProduct.image" class="h-24 w-24 rounded-lg object-cover bg-white" />
+                            <div class="flex-1">
+                                <h5 class="text-lg font-bold">{{ selectedTryOnProduct.name }}</h5>
+                                <p class="text-blue-600 font-bold mt-1">{{ formatCurrency(selectedTryOnProduct.price) }}</p>
+                                <button @click="selectedTryOnProduct = null; tryOnSearch = ''" class="mt-3 text-sm text-blue-700 hover:underline">Chọn sản phẩm khác</button>
+                            </div>
+                        </div>
+                    </div>
 
-				<!-- Try On Button -->
-				<div class="mt-6 flex gap-3">
-					<button 
-						:disabled="!tryOnImage || !selectedTryOnProduct"
-						class="flex-1 rounded bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
-					>
-						🤖 Thử đồ với AI
-					</button>
-					<button 
-						v-if="selectedTryOnProduct"
-						@click="addTryOnProductToCart"
-						class="flex-1 rounded border border-gray-300 px-4 py-3 font-semibold hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800"
-					>
-						Thêm vào giỏ
-					</button>
-				</div>
-			</div>
-		</div>
-	</section>
-	<div v-else class="h-64 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800"></div>
+                    <div v-else>
+                        <h4 class="mb-4 font-semibold">Tìm sản phẩm để thử</h4>
+                        <input v-model="tryOnSearch" type="text" placeholder="Nhập tên sản phẩm..." class="w-full rounded border p-3 dark:bg-gray-900 dark:border-gray-700 mb-4" />
+                        
+                        <div class="max-h-80 overflow-y-auto space-y-2 border rounded p-2 dark:border-gray-700">
+                            <div v-if="loadingTryOnProducts" class="text-center py-4">Đang tìm kiếm...</div>
+                            <div v-else-if="storeProducts.length === 0" class="text-center py-4 text-gray-500">Không tìm thấy sản phẩm.</div>
+                            
+                            <div 
+                                v-for="prod in storeProducts" 
+                                :key="prod.id" 
+                                @click="selectedTryOnProduct = prod"
+                                class="flex cursor-pointer gap-3 rounded border p-2 hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800 transition"
+                            >
+                                <img :src="prod.image" class="h-16 w-16 rounded object-cover bg-gray-200" />
+                                <div>
+                                    <p class="font-medium text-sm">{{ prod.name }}</p>
+                                    <p class="text-xs text-gray-500">{{ formatCurrency(prod.price) }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Nút Action -->
+                    <div class="mt-6">
+                        <button :disabled="!tryOnImage || !selectedTryOnProduct" class="w-full rounded-lg bg-blue-600 py-3 font-bold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                            🤖 BẮT ĐẦU THỬ ĐỒ (AI)
+                        </button>
+                        <p class="text-xs text-center mt-2 text-gray-500">Tính năng đang phát triển</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <div v-else class="container mx-auto px-4 py-8 animate-pulse"><div class="h-64 bg-gray-200 rounded"></div></div>
 </template>
 
 <script setup>
-import { onMounted, ref, computed, watch } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
+import { useProductsStore } from '../stores/products';
 import { useCartStore } from '../stores/cart';
 import { useWishlistStore } from '../stores/wishlist';
-import { useProductsStore } from '../stores/products';
-import api from '../utils/api';
+import { useUserStore } from '../stores/user'; // Import user store
+import { useUIStore } from '../stores/ui'; // Import ui store
+import api from '../utils/product_service_api'; 
 import { formatCurrency } from '../utils/helpers';
 
 const route = useRoute();
+const productStore = useProductsStore();
 const cart = useCartStore();
 const wishlist = useWishlistStore();
-const productsStore = useProductsStore();
+const userStore = useUserStore(); // Init user store
+const ui = useUIStore(); // Init ui store
+
+// State Product Detail
 const product = ref(null);
+const reviews = ref([]);
 const qty = ref(1);
 const activeTab = ref('description');
-const selectedColor = ref('#8b5cf6');
-const selectedSize = ref('M');
 const selectedImage = ref('');
 const productImages = ref([]);
 const currentImageIndex = ref(0);
+const colors = ref([]);
+const sizes = ref([]);
+const selectedColor = ref(null);
+const selectedSize = ref('M');
+const imageColorMap = ref({});
+const newReview = ref({ rating: 5, comment: '' });
+const isSubmitting = ref(false);
 
-// Try On feature
+// State Try On
 const tryOnImage = ref('');
 const tryOnSearch = ref('');
 const selectedTryOnProduct = ref(null);
 const storeProducts = ref([]);
-const loadingProducts = ref(false);
+const loadingTryOnProducts = ref(false);
 const fileInput = ref(null);
 
-// Sample reviews data
-const productReviews = ref([
-	{ id: 1, author: 'Nguyễn Văn A', rating: 5, date: '2 ngày trước', comment: 'Sản phẩm tuyệt vời! Chất lượng rất tốt, giao hàng nhanh.' },
-	{ id: 2, author: 'Trần Thị B', rating: 4, date: '1 tuần trước', comment: 'Rất hài lòng với mua hàng này. Size vừa vặn và màu sắc đúng như mô tả.' },
-	{ id: 3, author: 'Lê Văn C', rating: 5, date: '2 tuần trước', comment: 'Tuyệt vời! Mặc rất thoải mái và ấm áp.' }
-]);
+onMounted(async () => {
+  const id = route.params.id;
+  await productStore.fetchProductById(id);
+  const data = productStore.currentProduct;
 
-// Computed for filtered products
-const filteredStoreProducts = computed(() => {
-	if (!tryOnSearch.value) return storeProducts.value;
-	const query = tryOnSearch.value.toLowerCase();
-	return storeProducts.value.filter(p => 
-		p.name.toLowerCase().includes(query) || 
-		p.brand.toLowerCase().includes(query)
-	);
+  if (data) {
+    product.value = {
+      id: data.id,
+      sku: data.sku,
+      name: data.name,
+      price: data.price,
+      description: data.description,
+      stock: data.stock_quantity,
+      inStock: data.stock_quantity > 0,
+      rating: data.rating || 0,
+      reviews: data.review_count || 0,
+    };
+
+    if (data.attributes) {
+      data.attributes.forEach(attr => {
+        if (attr.attribute_name.toLowerCase() === 'màu') {
+          const match = attr.attribute_value.match(/^(.*)\s\((#.*)\)$/);
+          if (match) colors.value.push({ name: match[1], hex: match[2] });
+          else colors.value.push({ name: attr.attribute_value, hex: '#000000' });
+        } else if (attr.attribute_name === 'size') {
+          sizes.value.push(attr.attribute_value);
+        }
+      });
+    }
+    if (!sizes.value.length) sizes.value = ['XS', 'S', 'M', 'L', 'XL'];
+    if (colors.value.length > 0) selectedColor.value = colors.value[0];
+    if (sizes.value.length > 0) selectedSize.value = sizes.value[0];
+
+    if (data.images && data.images.length > 0) {
+      const sortedImages = [...data.images].sort((a, b) => a.sort_order - b.sort_order);
+      productImages.value = sortedImages.map(img => img.image_url);
+      imageColorMap.value = {};
+      sortedImages.forEach((img, index) => {
+        if (img.color) imageColorMap.value[img.color.toLowerCase()] = index;
+      });
+    } else {
+      productImages.value = ['https://via.placeholder.com/600x600?text=No+Image'];
+    }
+    
+    if (data.images?.[0]?.color && colors.value.length > 0) {
+        const firstColor = data.images[0].color.toLowerCase();
+        const matching = colors.value.find(c => c.hex.toLowerCase() === firstColor);
+        if (matching) selectedColor.value = matching;
+    }
+
+    selectedImage.value = productImages.value[0];
+    fetchReviews(id);
+  }
 });
 
-// Watch for search input changes - auto load products on first search
-watch(tryOnSearch, (newVal) => {
-	if (newVal && storeProducts.value.length === 0 && !loadingProducts.value) {
-		loadStoreProducts();
-	}
+watch(selectedColor, (newColor) => {
+  if (newColor && newColor.hex) {
+    const targetIndex = imageColorMap.value[newColor.hex.toLowerCase()];
+    if (targetIndex !== undefined) selectImageByIndex(targetIndex);
+  }
 });
 
-	function generateProductImages(productId, baseImage, w = 800, h = 800) {
-		// Generate multiple images for testing image carousel
-		// Using picsum.photos with different seeds to get different images
-		// Accept width and height so generated images match the original aspect/size
-		const sizeUrl = (seed) => `https://picsum.photos/${w}/${h}?random=${productId}_${seed}`;
-		return [
-			baseImage,
-			sizeUrl(1),
-			sizeUrl(2),
-			sizeUrl(3),
-			sizeUrl(4),
-		];
-	}
-
-	onMounted(async () => {
-		const productId = route.params.id;
-		const { data } = await api.get(`/products/${productId}`);
-		const p = data ?? {};
-		const baseImage = p.thumbnail || p.images?.[0] || 'https://picsum.photos/800/800';
-
-		// Set product basic info (immediate)
-		product.value = {
-			id: p.id,
-			name: p.title ?? p.name,
-			price: p.price,
-			brand: p.brand ?? 'Brand',
-			description: p.description ?? 'Mô tả ngắn sản phẩm',
-			longDescription: p.description ?? 'Chi tiết sản phẩm sẽ được cập nhật sớm',
-			image: p.thumbnail ?? (p.images?.[0] || 'https://picsum.photos/800'),
-			colors: ['#e5e7eb', '#a78bfa', '#000000', '#d8b4fe', '#374151', '#0f766e', '#c4b5fd'],
-			sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
-			stock: 10,
-			inStock: true,
-			reviews: 23
-		};
-
-		// Try to load base image to detect natural dimensions so generated picsum images match original size
-		const imgProbe = new Image();
-		imgProbe.crossOrigin = 'anonymous';
-		imgProbe.src = baseImage;
-
-		imgProbe.onload = () => {
-			const w = imgProbe.naturalWidth || 800;
-			const h = imgProbe.naturalHeight || Math.round(w * 0.75);
-			const images = generateProductImages(productId, baseImage, w, h);
-			productImages.value = images;
-			selectedImage.value = images[0];
-			currentImageIndex.value = 0;
-		};
-
-		imgProbe.onerror = () => {
-			// fallback generator
-			const images = generateProductImages(productId, baseImage);
-			productImages.value = images;
-			selectedImage.value = images[0];
-			currentImageIndex.value = 0;
-		};
-
-		// safety timeout in case image load hangs
-		setTimeout(() => {
-			if (!productImages.value.length) {
-				const images = generateProductImages(productId, baseImage);
-				productImages.value = images;
-				selectedImage.value = images[0];
-				currentImageIndex.value = 0;
-			}
-		}, 1200);
-
-
-	// Listen for keyboard navigation
-	window.addEventListener('keydown', handleKeyboard);
+watch(tryOnSearch, async (newVal) => {
+    if (newVal.length > 1) {
+        loadingTryOnProducts.value = true;
+        try {
+            const res = await api.get('/products', { params: { search: newVal, limit: 10 } });
+            if (res.data.success) {
+                storeProducts.value = res.data.data.map(p => {
+                    let thumb = 'https://via.placeholder.com/100';
+                    if (p.images?.length) thumb = p.images.find(i => i.is_primary)?.image_url || p.images[0].image_url;
+                    return { id: p.id, name: p.name, price: p.price, image: thumb };
+                });
+            }
+        } catch (e) { console.error(e); }
+        finally { loadingTryOnProducts.value = false; }
+    } else {
+        storeProducts.value = [];
+    }
 });
 
-function nextImage() {
-	if (productImages.value.length === 0) return;
-	currentImageIndex.value = (currentImageIndex.value + 1) % productImages.value.length;
-	selectedImage.value = productImages.value[currentImageIndex.value];
+function handleTryOnImageUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => tryOnImage.value = e.target.result;
+    reader.readAsDataURL(file);
+}
+function clearTryOnImage() { tryOnImage.value = ''; if(fileInput.value) fileInput.value.value = ''; }
+
+// src/pages/ProductDetail.vue
+
+async function handleDeleteReview(reviewId) {
+    if (!confirm('Bạn có chắc chắn muốn xóa bình luận này không?')) return;
+
+    try {
+        // Log ra để kiểm tra xem ID có đúng không
+        console.log('Đang xóa review ID:', reviewId);
+
+        // Gọi API
+        const response = await api.delete(`/products/reviews/${reviewId}`);
+        
+        // Kiểm tra kết quả trả về
+        if (response.data && response.data.success) {
+            // Dùng alert thay vì ui.pushToast nếu chưa cấu hình xong ui store
+            alert('Đã xóa bình luận thành công!'); 
+            
+            // Reload lại danh sách đánh giá ngay lập tức
+            await fetchReviews(product.value.id);
+        } else {
+            alert('Không thể xóa: ' + (response.data.message || 'Lỗi không xác định'));
+        }
+    } catch (e) {
+        console.error('Lỗi API Xóa:', e);
+        // Hiển thị chi tiết lỗi để dễ debug
+        alert('Lỗi Server (500): ' + (e.response?.data?.error || e.message));
+    }
 }
 
-function previousImage() {
-	if (productImages.value.length === 0) return;
-	currentImageIndex.value = (currentImageIndex.value - 1 + productImages.value.length) % productImages.value.length;
-	selectedImage.value = productImages.value[currentImageIndex.value];
+async function submitReview() {
+    if (!newReview.value.comment.trim()) return;
+    
+    isSubmitting.value = true;
+    try {
+        // Gọi API tạo review
+        // Cấu trúc payload tùy thuộc vào Backend yêu cầu
+        const payload = {
+            user_id: userStore.profile?.id, // ID người dùng
+            rating: newReview.value.rating,
+            comment: newReview.value.comment,
+            title: 'Đánh giá sản phẩm' // Backend có thể yêu cầu title
+        };
+
+        // Gọi qua axios instance
+        await api.post(`/products/${product.value.id}/reviews`, payload);
+        
+        // Thông báo thành công (Dùng ui store nếu có, hoặc alert tạm)
+        // ui.pushToast({ type: 'success', message: 'Cảm ơn bạn đã đánh giá!' });
+        alert('Cảm ơn bạn đã đánh giá!');
+
+        // Reset form
+        newReview.value.comment = '';
+        newReview.value.rating = 5;
+
+        // Load lại danh sách để hiện review mới
+        fetchReviews(product.value.id);
+
+    } catch (error) {
+        console.error(error);
+        alert('Lỗi khi gửi đánh giá: ' + (error.response?.data?.message || error.message));
+    } finally {
+        isSubmitting.value = false;
+    }
 }
 
-function selectImageByIndex(idx) {
-	currentImageIndex.value = idx;
-	selectedImage.value = productImages.value[idx];
-}
-
-function handleKeyboard(e) {
-	if (e.key === 'ArrowLeft') {
-		previousImage();
-	} else if (e.key === 'ArrowRight') {
-		nextImage();
-	}
-}
-
+async function fetchReviews(productId) { try { const res = await api.get(`/products/${productId}/reviews`); if (res.data.success) reviews.value = res.data.data; } catch (e) { console.error(e); } }
+function formatDate(d) { if(!d) return ''; return new Date(d).toLocaleDateString('vi-VN'); }
+function nextImage() { if (!productImages.value.length) return; currentImageIndex.value = (currentImageIndex.value + 1) % productImages.value.length; selectedImage.value = productImages.value[currentImageIndex.value]; }
+function previousImage() { if (!productImages.value.length) return; currentImageIndex.value = (currentImageIndex.value - 1 + productImages.value.length) % productImages.value.length; selectedImage.value = productImages.value[currentImageIndex.value]; }
+function selectImageByIndex(idx) { currentImageIndex.value = idx; selectedImage.value = productImages.value[idx]; }
 function addToCart() {
-	if (!product.value) return;
-	cart.addItem({
-		...product.value,
-		selectedColor: selectedColor.value,
-		selectedSize: selectedSize.value
-	}, qty.value || 1);
+  if (!product.value) return;
+  cart.addItem({ id: product.value.id, name: product.value.name, price: product.value.price, image: selectedImage.value, selectedColor: selectedColor.value, selectedSize: selectedSize.value }, qty.value);
 }
-
 function toggleWishlist() {
-	if (!product.value) return;
-	wishlist.toggleItem({
-		...product.value,
-		selectedColor: selectedColor.value,
-		selectedSize: selectedSize.value
-	});
-}
-
-// Try On Functions
-function handleImageUpload(event) {
-	const file = event.target.files?.[0];
-	if (!file) return;
-	
-	const reader = new FileReader();
-	reader.onload = (e) => {
-		tryOnImage.value = e.target?.result;
-	};
-	reader.readAsDataURL(file);
-}
-
-function clearImage() {
-	tryOnImage.value = '';
-	if (fileInput.value) {
-		fileInput.value.value = '';
-	}
-}
-
-async function loadStoreProducts() {
-	loadingProducts.value = true;
-	try {
-		// Fetch products using the same method as ProductList.vue
-		const params = {
-			limit: 24,
-			skip: 0
-		};
-		await productsStore.fetchList(params);
-		
-		// Map products to our format (same as ProductList.vue)
-		storeProducts.value = productsStore.items.map(p => ({
-			id: p.id,
-			name: p.title || p.name,
-			brand: p.brand || 'Brand',
-			price: p.price,
-			image: p.thumbnail || (p.images?.[0] || 'https://picsum.photos/400')
-		}));
-		
-		console.log('Loaded store products:', storeProducts.value);
-	} catch (error) {
-		console.error('Failed to load products:', error);
-	} finally {
-		loadingProducts.value = false;
-	}
-}
-
-function addTryOnProductToCart() {
-	if (!selectedTryOnProduct.value) return;
-	cart.addItem({
-		...selectedTryOnProduct.value,
-		selectedColor: selectedColor.value,
-		selectedSize: selectedSize.value
-	}, qty.value || 1);
+  if (!product.value) return;
+  wishlist.toggleItem({ id: product.value.id, name: product.value.name, price: product.value.price, image: selectedImage.value });
 }
 </script>
-
-

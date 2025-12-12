@@ -24,12 +24,15 @@
 						@mousedown.prevent
 						class="group flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-700"
 					>
-						<div class="h-10 w-10 overflow-hidden rounded">
-							<img :src="product.thumbnail" :alt="product.title" class="h-10 w-10 object-cover transition-transform duration-200 transform group-hover:scale-110" />
+						<div class="h-10 w-10 overflow-hidden rounded bg-gray-100">
+                            <!-- CẬP NHẬT: Dùng hàm lấy ảnh thật -->
+							<img :src="getProductImage(product)" :alt="product.name" class="h-10 w-10 object-cover transition-transform duration-200 transform group-hover:scale-110" />
 						</div>
 						<div class="flex-1">
-							<p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ product.title }}</p>
-							<p class="text-xs text-gray-500 dark:text-gray-400">{{ product.price ? `$${product.price}` : 'N/A' }}</p>
+                            <!-- CẬP NHẬT: Dùng product.name thay vì title -->
+							<p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ product.name }}</p>
+                            <!-- CẬP NHẬT: Format tiền Việt -->
+							<p class="text-xs text-red-600 font-bold dark:text-red-400">{{ formatPrice(product.price) }}</p>
 						</div>
 						<span class="text-xs text-gray-400">→</span>
 					</button>
@@ -52,16 +55,33 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useProductsStore } from '../../stores/products';
+import { useProductsStore } from '../../stores/products'; 
+import { useRouter } from 'vue-router';
 
-const products = useProductsStore();
+const productsStore = useProductsStore();
+const router = useRouter();
 const q = ref('');
 const showSuggestions = ref(false);
 const emit = defineEmits(['search']);
 
+// CẬP NHẬT: Logic lấy ảnh an toàn
+const getProductImage = (p) => {
+    if (p.images && p.images.length > 0) {
+        const primary = p.images.find(img => img.is_primary);
+        return primary ? primary.image_url : p.images[0].image_url;
+    }
+    return 'https://via.placeholder.com/100?text=No+Img';
+};
+
+// CẬP NHẬT: Logic format tiền tệ
+const formatPrice = (price) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+};
+
 onMounted(async () => {
-	if (products.items.length === 0) {
-		await products.fetchList({ limit: 100 });
+    // CẬP NHẬT: Dùng products.length và fetchProducts
+	if (productsStore.products.length === 0) {
+		await productsStore.fetchProducts({ limit: 100 });
 	}
 });
 
@@ -69,30 +89,29 @@ const filteredSuggestions = computed(() => {
 	if (!q.value?.trim()) return [];
 	
 	const query = q.value.trim().toLowerCase();
-	const items = products.items && products.items.length > 0 ? products.items : [];
+    // CẬP NHẬT: Lấy từ productsStore.products
+	const items = productsStore.products || [];
 	
-	// Filter and sort by relevance
+	// Filter và sort
 	const filtered = items.filter(product => {
-		const title = product.title?.toLowerCase() || '';
+        // CẬP NHẬT: Tìm theo name và sku
 		const name = product.name?.toLowerCase() || '';
-		const category = product.category?.toLowerCase() || '';
+		const sku = product.sku?.toLowerCase() || '';
 		
-		return title.includes(query) || name.includes(query) || category.includes(query);
+		return name.includes(query) || sku.includes(query);
 	});
 	
-	// Sort by relevance - exact match at start gets higher priority
 	const sorted = filtered.sort((a, b) => {
-		const aTitle = a.title?.toLowerCase() || a.name?.toLowerCase() || '';
-		const bTitle = b.title?.toLowerCase() || b.name?.toLowerCase() || '';
-		const query_lower = query.toLowerCase();
+		const aName = a.name?.toLowerCase() || '';
+		const bName = b.name?.toLowerCase() || '';
 		
-		const aStartsWith = aTitle.startsWith(query_lower) ? 0 : 1;
-		const bStartsWith = bTitle.startsWith(query_lower) ? 0 : 1;
+		const aStartsWith = aName.startsWith(query) ? 0 : 1;
+		const bStartsWith = bName.startsWith(query) ? 0 : 1;
 		
 		return aStartsWith - bStartsWith;
 	});
 	
-	return sorted.slice(0, 8); // Limit to 8 suggestions
+	return sorted.slice(0, 8); // Limit 8 suggestions
 });
 
 function onInput() {
@@ -100,16 +119,19 @@ function onInput() {
 }
 
 function closeSuggestions() {
-	// Delay to allow click on suggestion to register
 	setTimeout(() => {
 		showSuggestions.value = false;
 	}, 150);
 }
 
 function selectSuggestion(product) {
-	q.value = product.title;
+    // CẬP NHẬT: Dùng product.name
+	q.value = product.name;
 	showSuggestions.value = false;
-	emit('search', product.title);
+    
+    // Điều hướng thẳng đến trang chi tiết
+    router.push(`/product/${product.id}`);
+	emit('search', product.name);
 }
 
 function submit() {
@@ -128,5 +150,3 @@ function submit() {
 	opacity: 0;
 }
 </style>
-
-
